@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>پیگیری درخواست ویزه</title>
+<title>رسید درخواست ویزا</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&display=swap" rel="stylesheet">
 
@@ -66,7 +66,6 @@ button:hover{background:#154b61;}
   font-size:2rem;
   font-weight:800;
   color:#0f3f52;
-  letter-spacing:1px;
 }
 .header p{
   margin:5px 0;
@@ -78,11 +77,11 @@ button:hover{background:#154b61;}
 table{
   width:100%;
   border-collapse:collapse;
-  font-size:1.1rem;
+  font-size:1.05rem;
 }
 th, td{
   border:1px solid #999;
-  padding:10px;
+  padding:8px;
 }
 th{
   background:#1a5f7a;
@@ -107,25 +106,55 @@ td.label{
   font-weight:bold;
 }
 
-/* مخصوص چاپ */
+/* ===================== */
+/*        PRINT          */
+/* ===================== */
 @media print{
-  body{background:white;}
-  input, button, .page-title{display:none;}
-  .container{margin:0; width:100%;}
-  .result{box-shadow:none; border:none;}
 
-  /* چهار رسید در یک A4 */
+  @page{
+    size: A4 landscape;   /* 👈 A4 افقی */
+    margin: 10mm;
+  }
+
+  body{
+    background:white;
+  }
+
+  input, button, .page-title{
+    display:none;
+  }
+
+  .container{
+    width:100%;
+    margin:0;
+    padding:0;
+  }
+
+  /* هر رسید */
   .result{
-    width:48%;
     display:inline-block;
+    width:48%;           /* دو ستون */
+    height:auto;
     vertical-align:top;
     margin:1%;
     page-break-inside:avoid;
 
-    /* خط نقطه‌چین دور رسید برای قیچی */
-    border: 1px dashed #999;
-    padding:15px;
-    border-radius:5px;
+    border:1px dashed #555;   /* خط برش */
+    padding:12px;
+    box-shadow:none;
+    border-radius:6px;
+  }
+
+  table{
+    font-size:0.95rem;
+  }
+
+  .header h1{
+    font-size:1.4rem;
+  }
+
+  .header p{
+    font-size:0.85rem;
   }
 }
 </style>
@@ -136,12 +165,11 @@ td.label{
 
   <h2 class="page-title">پیگیری درخواست ویزا</h2>
 
-  <input type="text" id="otpInput" placeholder="کد OTP را وارد کنید">
-  <button id="checkBtn">نمایش و آماده‌سازی رسید</button>
+  <input type="text" id="otpInput" placeholder="کد خودرا وارد کنید">
+  <button id="checkBtn">چیک کردن وضیعت</button>
 
   <div class="result" id="resultDiv">
 
-    <!-- سربرگ چاپی -->
     <div class="header">
       <h1>خدمات کمپیوتری سرافرازی</h1>
       <p>شماره تماس: 0705927368 ، 0799846656 ، 0778743678</p>
@@ -150,7 +178,8 @@ td.label{
 
     <table id="infoTable"></table>
 
-    <button class="print-btn" onclick="window.print()">پرنت رسید</button>
+    <!-- اضافه کردن id به دکمه پرنت -->
+    <button id="printButton" class="print-btn" onclick="window.print()">پرنت رسید</button>
   </div>
 </div>
 
@@ -174,11 +203,12 @@ const otpInput = document.getElementById('otpInput');
 const checkBtn = document.getElementById('checkBtn');
 const resultDiv = document.getElementById('resultDiv');
 const infoTable = document.getElementById('infoTable');
+const printButton = document.getElementById('printButton'); // گرفتن دکمه پرنت
 
 checkBtn.addEventListener('click', async ()=>{
   const otp = otpInput.value.trim();
   if(!otp){
-    alert('کد OTP را وارد کنید');
+    alert('کد خود را وارد کنید');
     return;
   }
 
@@ -188,9 +218,13 @@ checkBtn.addEventListener('click', async ()=>{
   resultDiv.style.display = 'block';
 
   if(snapshot.empty){
-    infoTable.innerHTML = `<tr><td class="alert">اطلاعاتی یافت نشد</td></tr>`;
+    infoTable.innerHTML = `<tr><td class="alert">گشتم نبود، نگرد نیست</td></tr>`;
+    printButton.style.display = 'none'; // مخفی کردن دکمه پرنت
     return;
   }
+
+  // نمایش دکمه پرنت زمانی که داده پیدا شد
+  printButton.style.display = 'block';
 
   snapshot.forEach(docSnap=>{
     const d = docSnap.data();
@@ -203,8 +237,8 @@ checkBtn.addEventListener('click', async ()=>{
       <tr><td class="label">مبلغ پرداختی</td><td>${d.amount} افغانی</td></tr>
       <tr><td class="label">رسید</td><td>${d.receipt} افغانی</td></tr>
       <tr><td class="label">باقی‌مانده</td><td>${d.remaining} افغانی</td></tr>
-      <tr><td class="label">تاریخ تحویل</td><td>${d.deliveryDate}</td></tr>
-      <tr><td class="label">کد OTP</td><td>${d.otp}</td></tr>
+      <tr><td class="label">تاریخ تحویل پاسپورت</td><td>${d.deliveryDate}</td></tr>
+      <tr><td class="label">کد شما</td><td>${d.otp}</td></tr>
     `;
   });
 });
