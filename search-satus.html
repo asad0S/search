@@ -46,8 +46,47 @@
     cursor:pointer;
     font-weight:bold;
     transition: all 0.2s ease;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
   }
-  button:hover{background:#154b61;}
+  button:disabled {
+    background:#999;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  button:hover:not(:disabled){background:#154b61;}
+  
+  /* استایل لودینگ */
+  .loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top: 3px solid white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .loading-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px;
+    font-size: 1.1rem;
+    color: #1a5f7a;
+    background: #f0f7fc;
+    border-radius: 10px;
+    margin: 10px 0;
+  }
   
   .result{
     display:none;
@@ -80,6 +119,7 @@
     width:100%;
     border-collapse:collapse;
     font-size:1.05rem;
+    margin-bottom: 1.5rem;
   }
   th, td{
     border:1px solid #999;
@@ -108,9 +148,9 @@
   .button-group {
     display: flex;
     gap: 1rem;
-    margin-top: 1.5rem;
     justify-content: center;
     flex-wrap: wrap;
+    margin-top: 0;
   }
   
   .print-btn{
@@ -131,6 +171,7 @@
     color:red;
     text-align:center;
     font-weight:bold;
+    padding: 15px;
   }
   
   /* مودال ساده برای نمایش لینک */
@@ -200,22 +241,6 @@
     margin-top: 0.5rem;
   }
   
-  /* لودینگ ساده برای زمانی که لینک به صورت خودکار در حال بررسی است */
-  .loading {
-    display: inline-block;
-    margin-right: 10px;
-    width: 20px;
-    height: 20px;
-    border: 3px solid #f3f3f3;
-    border-top: 3px solid #1a5f7a;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-  }
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
   @media print{
     @page{
       size: A4 landscape;
@@ -251,6 +276,7 @@
   
     table{
       font-size:0.95rem;
+      margin-bottom: 0;
     }
   
     .header h1{
@@ -259,10 +285,6 @@
   
     .header p{
       font-size:0.85rem;
-    }
-  
-    #printButton, #shareLinkBtn {
-      display: none !important;
     }
     
     .receipt-display {
@@ -286,11 +308,14 @@
       <div class="header">
         <h1>خدمات کمپیوتری ملت</h1>
         <p>شماره تماس: 0705927368 ، 0799846656 ، 0778743678</p>
-       <p>آدرس: شهر میمنه کوچه مندوی </p>
+        <p>آدرس: شهر میمنه کوچه مندوی</p>
       </div>
   
-      <table id="infoTable">Loader</table>
-  
+      <!-- جدول اطلاعات - اینجا قرار دارد -->
+      <table id="infoTable"></table>
+      <!-- جدول بسته شد -->
+      
+      <!-- دکمه‌ها در زیر جدول و در جای اصلی خودشان -->
       <div class="button-group">
         <button id="printButton" class="print-btn" onclick="window.print()">پرنت رسید</button>
         <button id="shareLinkBtn" class="link-btn">دریافت لینک مشتری</button>
@@ -342,6 +367,9 @@
   
   let currentOtpCode = null;   // ذخیره آخرین کد معتبر جستجو شده
   
+  // --- آدرس آنلاین ثابت (برای ساخت لینک قابل ارسال برای مشتری) ---
+  const ONLINE_BASE_URL = "https://asad0s.github.io/search/search-satus.html";
+  
   // --- توابع کمکی ---
   function convertPersianToEnglishNumbers(input) {
     const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
@@ -373,6 +401,21 @@
     return nonEmptyLines.join('\n');
   }
   
+  // تابع نمایش لودینگ در جدول
+  function showLoadingInTable(message = "در حال بررسی وضعیت...") {
+    infoTable.innerHTML = `
+      <tr>
+        <td colspan="2" style="text-align:center; padding: 30px;">
+          <div class="loading-text">
+            <div class="loading-spinner"></div>
+            <span>${message}</span>
+          </div>
+        <\/td>
+      </tr>
+    `;
+    resultDiv.style.display = 'block';
+  }
+  
   // تابع اصلی نمایش اطلاعات در جدول
   function displayRequestData(docData, otpNumber) {
     // حذف خطوط خالی از متن رسیدات
@@ -386,58 +429,74 @@
     
     infoTable.innerHTML = `
       <tr><th>عنوان</th><th>اطلاعات</th></tr>
-      <tr><td class="label">اسم کامل</td><td>${escapeHtml(docData.fullName)}</td></tr>
-      <tr><td class="label">اسم پدر</td><td>${escapeHtml(docData.fatherName)}</td></tr>
-      <tr><td class="label">نوع ویزا</td><td>${escapeHtml(docData.visaType)}</td></tr>
-      <tr><td class="label">وضعیت</td><td>${escapeHtml(docData.status)}</td></tr>
-      <tr><td class="label">مبلغ کل</td><td>${docData.amount} افغانی</td></tr>
-      <tr><td class="label">رسیدات</td><td><div class="receipt-display">${receiptText}</div></td></tr>
-      <tr><td class="label">باقی‌مانده</td><td>${docData.remaining} افغانی</td></tr>
-      <tr><td class="label">تاریخ تحویل پاسپورت</td><td>${docData.deliveryDate}</td></tr>
-      <tr><td class="label">کد شما</td><td><strong>${docData.otp}</strong></td></tr>
+      <tr><td class="label">اسم کامل<\/td><td>${escapeHtml(docData.fullName)}<\/td></tr>
+      <tr><td class="label">اسم پدر<\/td><td>${escapeHtml(docData.fatherName)}<\/td></tr>
+      <tr><td class="label">نوع ویزا<\/td><td>${escapeHtml(docData.visaType)}<\/td></tr>
+      <tr><td class="label">وضعیت<\/td><td>${escapeHtml(docData.status)}<\/td></tr>
+      <tr><td class="label">مبلغ کل<\/td><td>${docData.amount} افغانی<\/td><tr>
+      <tr><td class="label">رسیدات<\/td><td><div class="receipt-display">${receiptText}</div><\/td></tr>
+      <tr><td class="label">باقی‌مانده<\/td><td>${docData.remaining} افغانی<\/td></tr>
+      <tr><td class="label">تاریخ تحویل پاسپورت<\/td><td>${docData.deliveryDate}<\/td></tr>
+      <tr><td class="label">کد شما<\/td><td><strong>${docData.otp}</strong><\/td></tr>
     `;
   }
   
   // تابع جستجو با استفاده از کد OTP (عدد)
   async function searchByOtp(otpNumber, isAutoLoad = false) {
-    // نمایش یک حالت بارگذاری در جدول (اختیاری)
+    // نمایش لودینگ
     if(isAutoLoad) {
-      infoTable.innerHTML = `<tr><td colspan="2" style="text-align:center">در حال بررسی لینک... <span class="loading"></span></td></tr>`;
+      showLoadingInTable("در حال بررسی لینک دریافت شده...");
+    } else {
+      showLoadingInTable("در حال جستجو در پایگاه داده...");
     }
     
-    const q = query(collection(db,"visaRequests"), where("otp","==",otpNumber));
-    const snapshot = await getDocs(q);
+    // غیرفعال کردن دکمه بررسی در حین جستجو
+    checkBtn.disabled = true;
+    const originalButtonText = checkBtn.innerHTML;
+    checkBtn.innerHTML = '<div class="loading-spinner"></div> در حال بررسی...';
     
-    resultDiv.style.display = 'block';
-    
-    if(snapshot.empty){
-      infoTable.innerHTML = `<tr><td class="alert">❌ گشتم نبود، نگرد نیست. کد وارد شده معتبر نمی‌باشد.</td></tr>`;
+    try {
+      const q = query(collection(db,"visaRequests"), where("otp","==",otpNumber));
+      const snapshot = await getDocs(q);
+      
+      if(snapshot.empty){
+        infoTable.innerHTML = `<tr><td class="alert">❌ گشتم نبود، نگرد نیست. کد وارد شده معتبر نمی‌باشد.<\/td></tr>`;
+        printButton.style.display = 'none';
+        shareLinkBtn.style.display = 'none';
+        currentOtpCode = null;
+        return false;
+      }
+      
+      // نمایش دکمه ها چون اطلاعات پیدا شد
+      printButton.style.display = 'block';
+      shareLinkBtn.style.display = 'block';
+      currentOtpCode = otpNumber;
+      
+      snapshot.forEach(docSnap=>{
+        const d = docSnap.data();
+        displayRequestData(d, otpNumber);
+      });
+      return true;
+    } catch (error) {
+      console.error("خطا در جستجو:", error);
+      infoTable.innerHTML = `<tr><td class="alert">❌ خطا در ارتباط با پایگاه داده. لطفاً دوباره تلاش کنید.<\/td></tr>`;
       printButton.style.display = 'none';
       shareLinkBtn.style.display = 'none';
-      currentOtpCode = null;
       return false;
+    } finally {
+      // بازگرداندن حالت دکمه
+      checkBtn.disabled = false;
+      checkBtn.innerHTML = originalButtonText;
     }
-    
-    // نمایش دکمه ها چون اطلاعات پیدا شد
-    printButton.style.display = 'block';
-    shareLinkBtn.style.display = 'block';
-    currentOtpCode = otpNumber;
-    
-    snapshot.forEach(docSnap=>{
-      const d = docSnap.data();
-      displayRequestData(d, otpNumber);
-    });
-    return true;
   }
   
-  // نمایش مودال با لینک ساخته شده
+  // نمایش مودال با لینک آنلاین (برای ارسال به مشتری)
   function showLinkModal(otpValue) {
     if (!otpValue) {
       alert('ابتدا کد معتبری جستجو کنید تا لینک ساخته شود.');
       return;
     }
-    const baseUrl = window.location.href.split('?')[0]; // آدرس صفحه بدون پارامتر
-    const fullLink = `${baseUrl}?otp=${otpValue}`;
+    const fullLink = `${ONLINE_BASE_URL}?otp=${otpValue}`;
     dynamicLinkSpan.textContent = fullLink;
     modal.classList.add('active');
     copyToast.textContent = '';
@@ -476,7 +535,7 @@
     const otpNumber = Number(otp);
     
     if (isNaN(otpNumber)) {
-      infoTable.innerHTML = `<tr><td class="alert">کد وارد شده معتبر نیست</td></tr>`;
+      infoTable.innerHTML = `<tr><td class="alert">کد وارد شده معتبر نیست<\/td></tr>`;
       resultDiv.style.display = 'block';
       printButton.style.display = 'none';
       shareLinkBtn.style.display = 'none';
@@ -504,7 +563,10 @@
   // مقداردهی اولیه پنهان بودن دکمه لینک و پرنت قبل از جستجو
   printButton.style.display = 'none';
   shareLinkBtn.style.display = 'none';
-  resultDiv.style.display = 'none'; // در ابتدا مخفی باشد
+  resultDiv.style.display = 'none';
+  
+  // پاک کردن متن "Loader" از جدول هنگام بارگذاری صفحه
+  infoTable.innerHTML = '';
   
   // --- بخش کلیدی: خواندن اتوماتیک از لینک و بررسی خودکار ---
   (async function autoCheckFromUrl() {
@@ -513,26 +575,19 @@
     
     if(otpParam && otpParam.trim() !== '') {
       let rawOtp = otpParam.trim();
-      // تبدیل اعداد فارسی / عربی به انگلیسی
       rawOtp = convertPersianToEnglishNumbers(rawOtp);
       const otpNumber = Number(rawOtp);
       
       if(!isNaN(otpNumber)){
-        // 1. قرار دادن کد داخل فیلد ورودی (برای نمایش به کاربر)
         otpInput.value = rawOtp;
-        
-        // 2. انجام جستجو به صورت خودکار (با نمایش حالت بارگذاری)
         await searchByOtp(otpNumber, true);
       } else {
-        // اگر کد در لینک معتبر نبود (مثلاً حروف بود) پیام خطا نمایش بده
         resultDiv.style.display = 'block';
-        infoTable.innerHTML = `<tr><td class="alert">⚠️ لینک معتبر نیست. کد وارد شده صحیح نمی‌باشد.</td></tr>`;
+        infoTable.innerHTML = `<tr><td class="alert">⚠️ لینک معتبر نیست. کد وارد شده صحیح نمی‌باشد.<\/td></tr>`;
         printButton.style.display = 'none';
         shareLinkBtn.style.display = 'none';
       }
     } else {
-      // اگر هیچ otp در لینک نبود، کاری انجام نمی‌دهیم و صفحه خالی برای جستجوی دستی آماده است.
-      // ولی برای تجربه بهتر نتیجه را مخفی نگه می‌داریم تا کاربر جستجو کند.
       resultDiv.style.display = 'none';
     }
   })();
