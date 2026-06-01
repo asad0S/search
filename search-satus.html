@@ -1,11 +1,16 @@
-<html lang="fa" dir="rtl"><head>
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>پیگیری درخواست ویزا</title>
+  <title>پیگیری درخواست ویزا | سامانه ملت</title>
   
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;800&amp;display=swap" rel="stylesheet">
   
   <style>
+  *{
+    box-sizing: border-box;
+  }
   body{
     font-family:'Vazirmatn', Tahoma, sans-serif;
     background:#e6f2ff;
@@ -40,6 +45,7 @@
     border:none;
     cursor:pointer;
     font-weight:bold;
+    transition: all 0.2s ease;
   }
   button:hover{background:#154b61;}
   
@@ -52,7 +58,6 @@
     margin-bottom:10px;
   }
   
-  /* سربرگ رسمی */
   .header{
     text-align:center;
     border-bottom:3px double #1a5f7a;
@@ -71,7 +76,6 @@
     font-weight:500;
   }
   
-  /* جدول اطلاعات */
   table{
     width:100%;
     border-collapse:collapse;
@@ -80,6 +84,7 @@
   th, td{
     border:1px solid #999;
     padding:8px;
+    vertical-align: top;
   }
   th{
     background:#1a5f7a;
@@ -91,12 +96,36 @@
     color:#1a5f7a;
   }
   
-  /* دکمه پرنت */
+  /* نمایش متن رسیدات بدون هیچ استایل اضافی */
+  .receipt-display {
+    margin: 0;
+    padding: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.4;
+  }
+  
+  .button-group {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
   .print-btn{
-    margin-top:1.5rem;
     background:#2e8b57;
+    margin:0;
+    flex: 1;
   }
   .print-btn:hover{background:#256f46;}
+  
+  .link-btn{
+    background:#ff8c00;
+    margin:0;
+    flex: 1;
+  }
+  .link-btn:hover{background:#e07c00;}
   
   .alert{
     color:red;
@@ -104,13 +133,92 @@
     font-weight:bold;
   }
   
-  /* ===================== */
-  /*        PRINT          */
-  /* ===================== */
-  @media print{
+  /* مودال ساده برای نمایش لینک */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    visibility: hidden;
+    opacity: 0;
+    transition: 0.2s ease;
+  }
+  .modal-overlay.active {
+    visibility: visible;
+    opacity: 1;
+  }
+  .modal-container {
+    background: white;
+    max-width: 90%;
+    width: 480px;
+    border-radius: 24px;
+    padding: 1.8rem 1.5rem;
+    text-align: center;
+    box-shadow: 0 20px 35px rgba(0,0,0,0.2);
+    direction: rtl;
+  }
+  .modal-container h3 {
+    color: #1a5f7a;
+    margin-top: 0;
+  }
+  .modal-link {
+    background: #f0f7fc;
+    padding: 12px;
+    border-radius: 16px;
+    direction: ltr;
+    text-align: left;
+    word-break: break-all;
+    font-family: monospace;
+    font-size: 0.9rem;
+    border: 1px solid #cbd5e1;
+    margin: 1rem 0;
+  }
+  .copy-btn {
+    background: #1a5f7a;
+    padding: 0.6rem;
+    font-size: 1rem;
+    width: auto;
+    display: inline-block;
+    margin: 0 0 1rem 0;
+    border-radius: 40px;
+    padding: 0.5rem 1.2rem;
+  }
+  .close-modal {
+    background: #6c757d;
+    margin-bottom: 0;
+  }
+  .toast-msg {
+    font-size: 0.85rem;
+    color: #2e8b57;
+    margin-top: 0.5rem;
+  }
   
+  /* لودینگ ساده برای زمانی که لینک به صورت خودکار در حال بررسی است */
+  .loading {
+    display: inline-block;
+    margin-right: 10px;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #1a5f7a;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  @media print{
     @page{
-      size: A4 landscape;   /* 👈 A4 افقی */
+      size: A4 landscape;
       margin: 10mm;
     }
   
@@ -118,7 +226,7 @@
       background:white;
     }
   
-    input, button, .page-title{
+    input, button, .page-title, .button-group, .modal-overlay{
       display:none;
     }
   
@@ -128,16 +236,14 @@
       padding:0;
     }
   
-    /* هر رسید */
     .result{
       display:inline-block;
-      width:48%;           /* دو ستون */
+      width:48%;
       height:auto;
       vertical-align:top;
       margin:1%;
       page-break-inside:avoid;
-  
-      border:1px dashed #555;   /* خط برش */
+      border:1px dashed #555;
       padding:12px;
       box-shadow:none;
       border-radius:6px;
@@ -155,9 +261,13 @@
       font-size:0.85rem;
     }
   
-    /* تغییر اضافه شده: مخفی کردن دکمه پرینت در نسخه چاپ */
-    #printButton {
+    #printButton, #shareLinkBtn {
       display: none !important;
+    }
+    
+    .receipt-display {
+      padding: 0;
+      margin: 0;
     }
   }
   </style>
@@ -168,21 +278,35 @@
   
     <h2 class="page-title">پیگیری درخواست ویزا</h2>
   
-    <input type="text" id="otpInput" placeholder="کد خودرا وارد کنید">
-    <button id="checkBtn">چیک کردن وضیعت</button>
+    <input type="text" id="otpInput" placeholder="کد خود را وارد کنید">
+    <button id="checkBtn">بررسی وضعیت</button>
   
     <div class="result" id="resultDiv">
   
       <div class="header">
-        <h1>خدمات کمپیوتری سرافرازی</h1>
+        <h1>خدمات کمپیوتری ملت</h1>
         <p>شماره تماس: 0705927368 ، 0799846656 ، 0778743678</p>
-        <p>آدرس: فاریاب – شهر میمنه</p>
+       <p>آدرس: شهر میمنه کوچه مندوی </p>
       </div>
   
-      <table id="infoTable"></table>
+      <table id="infoTable">Loader</table>
   
-      <!-- اضافه کردن id به دکمه پرنت -->
-      <button id="printButton" class="print-btn" onclick="window.print()">پرنت رسید</button>
+      <div class="button-group">
+        <button id="printButton" class="print-btn" onclick="window.print()">پرنت رسید</button>
+        <button id="shareLinkBtn" class="link-btn">دریافت لینک مشتری</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- مودال نمایش لینک اختصاصی -->
+  <div id="linkModal" class="modal-overlay">
+    <div class="modal-container">
+      <h3>🔗 لینک اختصاصی پیگیری</h3>
+      <p>با کلیک روی لینک زیر یا ارسال آن برای مشتری، بدون نیاز به وارد کردن کد وضعیت را مشاهده می‌کند:</p>
+      <div class="modal-link" id="dynamicLink">https://asad0s.github.io/search/search-satus.html?otp=XXXX</div>
+      <button id="copyLinkBtn" class="copy-btn">📋 کپی لینک</button>
+      <div id="copyToast" class="toast-msg"></div>
+      <button id="closeModalBtn" class="close-modal">بستن</button>
     </div>
   </div>
   
@@ -207,8 +331,18 @@
   const resultDiv = document.getElementById('resultDiv');
   const infoTable = document.getElementById('infoTable');
   const printButton = document.getElementById('printButton');
+  const shareLinkBtn = document.getElementById('shareLinkBtn');
   
-  // تابع برای تبدیل اعداد فارسی به انگلیسی
+  // المان های مودال
+  const modal = document.getElementById('linkModal');
+  const dynamicLinkSpan = document.getElementById('dynamicLink');
+  const copyLinkBtn = document.getElementById('copyLinkBtn');
+  const copyToast = document.getElementById('copyToast');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  
+  let currentOtpCode = null;   // ذخیره آخرین کد معتبر جستجو شده
+  
+  // --- توابع کمکی ---
   function convertPersianToEnglishNumbers(input) {
     const persianNumbers = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
     const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
@@ -218,10 +352,119 @@
       const regex = new RegExp(persianNumbers[i], 'g');
       result = result.replace(regex, englishNumbers[i]);
     }
-    
     return result;
   }
   
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+  
+  // حذف خطوط خالی از ابتدا و انتهای متن
+  function trimEmptyLines(str) {
+    if (!str) return '';
+    const lines = str.split(/\r?\n/);
+    const nonEmptyLines = lines.filter(line => line.trim() !== '');
+    return nonEmptyLines.join('\n');
+  }
+  
+  // تابع اصلی نمایش اطلاعات در جدول
+  function displayRequestData(docData, otpNumber) {
+    // حذف خطوط خالی از متن رسیدات
+    let receiptText = '';
+    if (docData.receipt && docData.receipt.trim() !== '') {
+      receiptText = trimEmptyLines(docData.receipt);
+      receiptText = escapeHtml(receiptText).replace(/\n/g, '<br>');
+    } else {
+      receiptText = 'هیچ رسیدی ثبت نشده است';
+    }
+    
+    infoTable.innerHTML = `
+      <tr><th>عنوان</th><th>اطلاعات</th></tr>
+      <tr><td class="label">اسم کامل</td><td>${escapeHtml(docData.fullName)}</td></tr>
+      <tr><td class="label">اسم پدر</td><td>${escapeHtml(docData.fatherName)}</td></tr>
+      <tr><td class="label">نوع ویزا</td><td>${escapeHtml(docData.visaType)}</td></tr>
+      <tr><td class="label">وضعیت</td><td>${escapeHtml(docData.status)}</td></tr>
+      <tr><td class="label">مبلغ کل</td><td>${docData.amount} افغانی</td></tr>
+      <tr><td class="label">رسیدات</td><td><div class="receipt-display">${receiptText}</div></td></tr>
+      <tr><td class="label">باقی‌مانده</td><td>${docData.remaining} افغانی</td></tr>
+      <tr><td class="label">تاریخ تحویل پاسپورت</td><td>${docData.deliveryDate}</td></tr>
+      <tr><td class="label">کد شما</td><td><strong>${docData.otp}</strong></td></tr>
+    `;
+  }
+  
+  // تابع جستجو با استفاده از کد OTP (عدد)
+  async function searchByOtp(otpNumber, isAutoLoad = false) {
+    // نمایش یک حالت بارگذاری در جدول (اختیاری)
+    if(isAutoLoad) {
+      infoTable.innerHTML = `<tr><td colspan="2" style="text-align:center">در حال بررسی لینک... <span class="loading"></span></td></tr>`;
+    }
+    
+    const q = query(collection(db,"visaRequests"), where("otp","==",otpNumber));
+    const snapshot = await getDocs(q);
+    
+    resultDiv.style.display = 'block';
+    
+    if(snapshot.empty){
+      infoTable.innerHTML = `<tr><td class="alert">❌ گشتم نبود، نگرد نیست. کد وارد شده معتبر نمی‌باشد.</td></tr>`;
+      printButton.style.display = 'none';
+      shareLinkBtn.style.display = 'none';
+      currentOtpCode = null;
+      return false;
+    }
+    
+    // نمایش دکمه ها چون اطلاعات پیدا شد
+    printButton.style.display = 'block';
+    shareLinkBtn.style.display = 'block';
+    currentOtpCode = otpNumber;
+    
+    snapshot.forEach(docSnap=>{
+      const d = docSnap.data();
+      displayRequestData(d, otpNumber);
+    });
+    return true;
+  }
+  
+  // نمایش مودال با لینک ساخته شده
+  function showLinkModal(otpValue) {
+    if (!otpValue) {
+      alert('ابتدا کد معتبری جستجو کنید تا لینک ساخته شود.');
+      return;
+    }
+    const baseUrl = window.location.href.split('?')[0]; // آدرس صفحه بدون پارامتر
+    const fullLink = `${baseUrl}?otp=${otpValue}`;
+    dynamicLinkSpan.textContent = fullLink;
+    modal.classList.add('active');
+    copyToast.textContent = '';
+  }
+  
+  function closeModal() {
+    modal.classList.remove('active');
+  }
+  
+  async function copyLinkToClipboard() {
+    const linkText = dynamicLinkSpan.textContent;
+    if (!linkText || linkText.includes('XXXX')) return;
+    try {
+      await navigator.clipboard.writeText(linkText);
+      copyToast.textContent = '✅ لینک با موفقیت کپی شد!';
+      setTimeout(() => {
+        copyToast.textContent = '';
+      }, 2000);
+    } catch (err) {
+      copyToast.textContent = '❌ خطا در کپی، دستی کپی کنید';
+      setTimeout(() => {
+        copyToast.textContent = '';
+      }, 1500);
+    }
+  }
+  
+  // --- رویدادهای دکمه ها ---
   checkBtn.addEventListener('click', async ()=>{
     let otp = otpInput.value.trim();
     if(!otp){
@@ -229,49 +472,71 @@
       return;
     }
   
-    // تبدیل اعداد فارسی به انگلیسی
     otp = convertPersianToEnglishNumbers(otp);
-    
-    // تبدیل به عدد برای جستجو در Firebase
     const otpNumber = Number(otp);
     
     if (isNaN(otpNumber)) {
       infoTable.innerHTML = `<tr><td class="alert">کد وارد شده معتبر نیست</td></tr>`;
       resultDiv.style.display = 'block';
       printButton.style.display = 'none';
+      shareLinkBtn.style.display = 'none';
+      currentOtpCode = null;
       return;
     }
-  
-    const q = query(collection(db,"visaRequests"), where("otp","==",otpNumber));
-    const snapshot = await getDocs(q);
-  
-    resultDiv.style.display = 'block';
-  
-    if(snapshot.empty){
-      infoTable.innerHTML = `<tr><td class="alert">گشتم نبود، نگرد نیست</td></tr>`;
-      printButton.style.display = 'none';
-      return;
-    }
-  
-    printButton.style.display = 'block';
-  
-    snapshot.forEach(docSnap=>{
-      const d = docSnap.data();
-      infoTable.innerHTML = `
-        <tr><th>عنوان</th><th>اطلاعات</th></tr>
-        <tr><td class="label">اسم کامل</td><td>${d.fullName}</td></tr>
-        <tr><td class="label">اسم پدر</td><td>${d.fatherName}</td></tr>
-        <tr><td class="label">نوع ویزا</td><td>${d.visaType}</td></tr>
-        <tr><td class="label">وضعیت</td><td>${d.status}</td></tr>
-        <tr><td class="label">مبلغ پرداختی</td><td>${d.amount} افغانی</td></tr>
-        <tr><td class="label">رسید</td><td>${d.receipt} افغانی</td></tr>
-        <tr><td class="label">باقی&zwnj;مانده</td><td>${d.remaining} افغانی</td></tr>
-        <tr><td class="label">تاریخ تحویل پاسپورت</td><td>${d.deliveryDate}</td></tr>
-        <tr><td class="label">کد شما</td><td>${d.otp}</td></tr>
-      `;
-    });
+    
+    await searchByOtp(otpNumber, false);
   });
+  
+  shareLinkBtn.addEventListener('click', () => {
+    if(currentOtpCode !== null && !isNaN(currentOtpCode)) {
+      showLinkModal(currentOtpCode);
+    } else {
+      alert('لطفا ابتدا کد خود را جستجو کنید تا لینک اختصاصی ساخته شود.');
+    }
+  });
+  
+  copyLinkBtn.addEventListener('click', copyLinkToClipboard);
+  closeModalBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if(e.target === modal) closeModal();
+  });
+  
+  // مقداردهی اولیه پنهان بودن دکمه لینک و پرنت قبل از جستجو
+  printButton.style.display = 'none';
+  shareLinkBtn.style.display = 'none';
+  resultDiv.style.display = 'none'; // در ابتدا مخفی باشد
+  
+  // --- بخش کلیدی: خواندن اتوماتیک از لینک و بررسی خودکار ---
+  (async function autoCheckFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const otpParam = urlParams.get('otp');
+    
+    if(otpParam && otpParam.trim() !== '') {
+      let rawOtp = otpParam.trim();
+      // تبدیل اعداد فارسی / عربی به انگلیسی
+      rawOtp = convertPersianToEnglishNumbers(rawOtp);
+      const otpNumber = Number(rawOtp);
+      
+      if(!isNaN(otpNumber)){
+        // 1. قرار دادن کد داخل فیلد ورودی (برای نمایش به کاربر)
+        otpInput.value = rawOtp;
+        
+        // 2. انجام جستجو به صورت خودکار (با نمایش حالت بارگذاری)
+        await searchByOtp(otpNumber, true);
+      } else {
+        // اگر کد در لینک معتبر نبود (مثلاً حروف بود) پیام خطا نمایش بده
+        resultDiv.style.display = 'block';
+        infoTable.innerHTML = `<tr><td class="alert">⚠️ لینک معتبر نیست. کد وارد شده صحیح نمی‌باشد.</td></tr>`;
+        printButton.style.display = 'none';
+        shareLinkBtn.style.display = 'none';
+      }
+    } else {
+      // اگر هیچ otp در لینک نبود، کاری انجام نمی‌دهیم و صفحه خالی برای جستجوی دستی آماده است.
+      // ولی برای تجربه بهتر نتیجه را مخفی نگه می‌داریم تا کاربر جستجو کند.
+      resultDiv.style.display = 'none';
+    }
+  })();
+  
   </script>
-  
-  
-  </body></html>
+  </body>
+  </html>
